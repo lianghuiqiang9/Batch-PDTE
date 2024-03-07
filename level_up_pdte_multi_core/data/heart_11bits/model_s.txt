@@ -1,0 +1,15 @@
+{"internal": {"threshold": 1944, "feature": 8, "index": 0, "op": "leq",
+ "left": {"internal": {"threshold": 1954, "feature": 10, "index": 0, "op": "leq", 
+        "left": {"internal": {"threshold": 1633, "feature": 4, "index": 0, "op": "leq", 
+                "left": {"leaf": 0}, 
+                "right": {"leaf": 1}}}, 
+        "right": {"leaf": 1}}},
+ "right": {"internal": {"threshold": 1746, "feature": 7, "index": 0, "op": "leq", 
+        "left": {"leaf": 1},
+        "right": {"leaf": 0}}}}}
+
+
+{"internal": {"threshold": 1944, "feature": 8, "index": 0, "op": "leq", "left": {"internal": {"threshold": 1954, "feature": 10, "index": 0, "op": "leq", "left": {"internal": {"threshold": 1633, "feature": 4, "index": 0, "op": "leq", "left": {"leaf": 0}, "right": {"leaf": 1}}}, "right": {"leaf": 1}}}, "right": {"internal": {"threshold": 1746, "feature": 7, "index": 0, "op": "leq", "left": {"leaf": 1}, "right": {"leaf": 0}}}}}
+
+//用于测试多个叶子结点不同，和相同的属性
+{"internal": {"threshold": 1944, "feature": 8, "index": 0, "op": "leq", "left": {"internal": {"threshold": 1954, "feature": 8, "index": 0, "op": "leq", "left": {"internal": {"threshold": 1633, "feature": 8, "index": 0, "op": "leq", "left": {"leaf": 4}, "right": {"leaf": 3}}}, "right": {"leaf": 2}}}, "right": {"internal": {"threshold": 1746, "feature": 7, "index": 0, "op": "leq", "left": {"leaf": 1}, "right": {"leaf": 0}}}}}

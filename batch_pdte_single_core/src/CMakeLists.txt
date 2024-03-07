@@ -1,0 +1,1 @@
+add_library(src cmp.cpp node.cpp pdte.cpp utils.cpp)
