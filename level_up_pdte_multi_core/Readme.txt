@@ -1,5 +1,5 @@
 
-### should install seal
+###
 
 ## cmp_bench
 cd level_up_pdte_single_core

@@ -1,5 +1,5 @@
 
-##should install seal
+###
 
 ## cmp_bench
 cd ours_pdte_single_core
