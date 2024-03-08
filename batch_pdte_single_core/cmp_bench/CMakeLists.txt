@@ -6,6 +6,10 @@ add_executable(tecmp tecmp.cpp ../src/cmp.cpp)
 target_include_directories(tecmp PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../include)
 target_link_libraries(tecmp SEAL::seal)
 
+add_executable(tecmp_recursive tecmp_recursive.cpp ../src/cmp.cpp)
+target_include_directories(tecmp_recursive PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../include)
+target_link_libraries(tecmp_recursive SEAL::seal)
+
 add_executable(lrcmp lrcmp.cpp ../src/cmp.cpp)
 target_include_directories(lrcmp PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../include)
 target_link_libraries(lrcmp SEAL::seal)

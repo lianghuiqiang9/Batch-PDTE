@@ -21,13 +21,14 @@ vector<vector<uint64_t>> lrcmp_encode_b(vector<uint64_t> b,int n, uint64_t slot_
 EncryptionParameters lrcmp_init(int n);
 
 Ciphertext tecmp(Evaluator *evaluator,GaloisKeys* gal_keys_server, RelinKeys* rlk_server, vector<uint64_t> a,vector<Ciphertext> b, int l,int m,uint64_t m_degree, seal::Ciphertext one_zero_init_cipher);
+Ciphertext tecmp_recursive(Evaluator *evaluator,GaloisKeys* gal_keys_server, RelinKeys* rlk_server, vector<uint64_t> a,vector<Ciphertext> b, int l,int m,uint64_t m_degree, seal::Ciphertext one_zero_init_cipher);
 vector<Ciphertext> tecmp_encode_b_enc(vector<uint64_t> encrypted_op, seal::BatchEncoder *batch_encoder, seal::Encryptor *encryptor, int l, int m,int slot_count, int row_count, int m_degree, int num_cmps_per_row, int num_slots_per_element);
 vector<vector<uint64_t>> tecmp_encode_b(vector<uint64_t> b, int l, int m,int m_degree,uint64_t num_cmps);
 vector<Ciphertext> tecmp_thermometer_encode_b_enc(vector<vector<uint64_t>> encrypted_op_encode, seal::BatchEncoder *batch_encoder, seal::Encryptor *encryptor, int l, int m,int slot_count, int row_count, int m_degree, int num_cmps_per_row, int num_slots_per_element);
 vector<uint64_t> tecmp_encode_a(uint64_t a, int l, int m, uint64_t m_degree);
 vector<uint64_t> tecmp_decode_a_gt_b_dec(Ciphertext cipher_result, Decryptor *decryptor, BatchEncoder *batch_encoder, uint64_t num, uint64_t num_slots_per_element, uint64_t num_cmps_per_row, uint64_t row_count);
 EncryptionParameters tecmp_init(int n,int l,int m);
-
+EncryptionParameters tecmp_recursive_init(int n,int l,int m);
 Ciphertext clear_cipher_result( Evaluator *evaluator, RelinKeys *rlk_server, Ciphertext result, Plaintext one_zero );
 Plaintext init_one_zero_salt(BatchEncoder *batch_encoder, int slot_count,uint64_t num_cmps,uint64_t num_cmps_per_row,uint64_t num_slots_per_element,uint64_t row_count);
 

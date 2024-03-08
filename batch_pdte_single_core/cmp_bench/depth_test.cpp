@@ -10,6 +10,7 @@ using namespace seal;
 // degree = 14 prime_bitlength = 17 coeff_modulus = default  max_depth = 12   multiply_inplace average time 54180\mus
 // degree = 14 prime_bitlength = 17 coeff_modulus = 60       max_depth = 11   multiply_inplace average time 38729\mus
 // degree = 14 prime_bitlength = 17 coeff_modulus = 48       max_depth = 8    multiply_inplace average time 38344\mus
+// degree = 13 prime_bitlength = 17 coeff_modulus = default  max_depth = 5    multiply_inplace average time 11909\mus
 // degree = 13 prime_bitlength = 20 coeff_modulus = default  max_depth = 4    multiply_inplace average time 12180\mus
 
 //g++ -o depth_test -O3 depth_test.cpp -I /usr/local/include/SEAL-4.1 -lseal-4.1
@@ -20,18 +21,18 @@ int main(){
     //uint64_t log_poly_mod_degree=14; uint64_t prime_bitlength=17;
     //uint64_t log_poly_mod_degree=13; uint64_t prime_bitlength=17;
     //uint64_t log_poly_mod_degree=12; uint64_t prime_bitlength=16;
-    uint64_t log_poly_mod_degree=14; uint64_t prime_bitlength=20;
+    uint64_t log_poly_mod_degree=14; uint64_t prime_bitlength=17;
 
     uint64_t poly_modulus_degree = 1 << log_poly_mod_degree;
     EncryptionParameters parms = EncryptionParameters(scheme_type::bfv);
     parms.set_poly_modulus_degree(poly_modulus_degree);
     parms.set_plain_modulus(PlainModulus::Batching(poly_modulus_degree, prime_bitlength));
     
-    //parms.set_coeff_modulus(CoeffModulus::BFVDefault(poly_modulus_degree));
+    parms.set_coeff_modulus(CoeffModulus::BFVDefault(poly_modulus_degree));
     //parms.set_coeff_modulus(CoeffModulus::Create(poly_modulus_degree, { 60, 60, 60, 60, 60, 60, 60 }));
     //parms.set_coeff_modulus(CoeffModulus::Create(poly_modulus_degree, { 48, 48, 48, 48, 48, 48, 48 }));
     //parms.set_coeff_modulus(CoeffModulus::BFVDefault(poly_modulus_degree));
-    parms.set_coeff_modulus(CoeffModulus::Create(poly_modulus_degree, { 48, 48, 48, 48, 48, 48, 48 }));
+    //parms.set_coeff_modulus(CoeffModulus::Create(poly_modulus_degree, { 48, 48, 48, 48, 48, 48, 48 }));
     
     SEALContext* context = new SEALContext(parms);
 
@@ -48,8 +49,20 @@ int main(){
     
     GaloisKeys* gal_keys_server = new GaloisKeys();
     keygen.create_galois_keys(*gal_keys_server);    
-    uint64_t slot_count = batch_encoder->slot_count();
     uint64_t plain_modulus = parms.plain_modulus().value();
+    uint64_t slot_count = batch_encoder->slot_count();
+    uint64_t row_count = slot_count / 2;
+    //cout << "Plaintext matrix row size: " << row_count << endl;
+    int l=2;
+    int m=4;
+    int n = l * m;
+    uint64_t m_degree = 1<<m ;
+    uint64_t num_slots_per_element = m_degree;
+    //out << "Plaintext matrix num_slots_per_element: " << num_slots_per_element << endl;
+    uint64_t num_cmps_per_row = row_count/num_slots_per_element;
+    uint64_t num_cmps = 2 * num_cmps_per_row;
+
+
 
     vector<uint64_t> x(slot_count, 1);
     x[1] = 3;
@@ -60,13 +73,8 @@ int main(){
 
     auto start = clock();
     batch_encoder->encode(x, pt);
-    auto finish = clock() - start ;
-    cout<<"encode                                : "<< finish <<" \\mus"<<endl;
 
-    start = clock();
     encryptor->encrypt(pt, ct);
-    finish = clock() - start ;
-    cout<<"encrypt                               : "<< finish <<" \\mus"<<endl;
 
 
     encryptor->encrypt(pt, ct_temp);
@@ -86,27 +94,160 @@ int main(){
         //cout<<res[0]<<" "<<res[1]<<endl<<x[0]<<" "<<x[1]<<endl;
         if (res[0]!=x[0]||res[1]!=x[1]){
             depth = i;
-            cout<<"depth = "<<depth<<endl;
+            cout<<"depth                                 : "<<depth<<endl;
             break;
         }
 
     }
+
+   {
+    srand(time(NULL));
+    vector<uint64_t> encrypted_op(slot_count, 0); 
+    for(int i = 0; i<num_cmps ;i++){
+        encrypted_op[i]= rand() % ((uint64_t)1 << n);
+    }
+
+    vector<uint64_t> plain_op(slot_count, 0);
+    for(int i = 0; i<num_cmps ;i++){
+        plain_op[i]= rand() % ((uint64_t)1 << n);
+    }
+
+    vector<uint64_t> slat(slot_count, 0);
+    for(int i = 0; i<num_cmps ;i++){
+        plain_op[i]= rand() % ((uint64_t)1 << n);
+    }
+
+    vector<uint64_t> k(slot_count, 1);
+
+    Plaintext pt; 
+    Ciphertext ct;
+
+    auto start = clock();
+    batch_encoder->encode(encrypted_op, pt);
+    auto finish = clock() - start ;
+    cout<<"encode                                : "<< finish <<" \\mus"<<endl;
+    
+    start = clock();
+    encryptor->encrypt(pt, ct);
     finish = clock() - start ;
-    cout<<"average multiply_inplace                          : "<< finish/(depth+1) <<" \\mus"<<endl;
+    cout<<"encrypt                               : "<< finish <<" \\mus"<<endl;
+
+    start = clock();
+    decryptor->decrypt(ct,ans);
+    finish = clock() - start ;
+    cout<<"decrypt                               : "<< finish <<" \\mus"<<endl;
+
+    start = clock();
+    batch_encoder->decode(ans, res);
+    finish = clock() - start ;
+    cout<<"decode                                : "<< finish <<" \\mus"<<endl;
+
+    batch_encoder->encode(plain_op, pt);
+    Plaintext pt_k; 
+    batch_encoder->encode(k, pt_k);
+
+    Ciphertext ct_temp;
+    start = clock();
+    evaluator->rotate_rows(ct, 1, *gal_keys_server, ct_temp);
+    finish = clock() - start ;
+    cout<<"rotate_rows                           : "<< finish <<" \\mus"<<endl;
+
+    start = clock();
+    evaluator->multiply(ct,ct,ct_temp);
+    finish = clock() - start ;
+    cout<<"multiply                              : "<< finish <<" \\mus"<<endl;
+
+    start = clock();
+    evaluator->multiply_inplace(ct,ct);
+    finish = clock() - start ;
+    cout<<"multiply_inplace                      : "<< finish <<" \\mus"<<endl;
+
+    start = clock();
+    evaluator->multiply_plain(ct,pt,ct_temp);
+    finish = clock() - start ;
+    cout<<"multiply_plain                        : "<< finish <<" \\mus"<<endl;
+
+    start = clock();
+    evaluator->multiply_plain_inplace(ct,pt);
+    finish = clock() - start ;
+    cout<<"multiply_plain_inplace                : "<< finish <<" \\mus"<<endl;
+
+    start = clock();
+    evaluator->multiply_plain(ct,pt_k,ct_temp);
+    finish = clock() - start ;
+    cout<<"multiply_plain with one               : "<< finish <<" \\mus"<<endl;
+
+    start = clock();
+    evaluator->multiply_plain_inplace(ct,pt_k);
+    finish = clock() - start ;
+    cout<<"multiply_plain_inplace with one       : "<< finish <<" \\mus"<<endl;
 
 
 
+    start = clock();
+    evaluator->add(ct,ct,ct_temp);
+    finish = clock() - start ;
+    cout<<"add                                   : "<< finish <<" \\mus"<<endl;
 
-    //cout<<" log_poly_mod_degree     = "<<log_poly_mod_degree<<endl;
-    //cout<<" log_plain_modlus        = "<<log(parms.plain_modulus().value())/log(2)<<endl;
-    //cout<<" log_cipher_coeff_modlus = "<<log(parms.coeff_modulus()[0].value())/log(2)<<endl;
-    //cout<<" log_cipher_coeff_modlus = "<<log(parms.coeff_modulus()[1].value())/log(2)<<endl;
-    //cout<<" log_cipher_coeff_modlus = "<<log(parms.coeff_modulus()[2].value())/log(2)<<endl;
-
-    //std::ofstream output_file("bfv_ciphertext", ios::binary);
-    //cout<<ct.save(output_file)<<endl;
+    start = clock();
+    evaluator->add_inplace(ct,ct);
+    finish = clock() - start ;
+    cout<<"add_inplace                           : "<< finish <<" \\mus"<<endl;
 
 
+
+    start = clock();
+    evaluator->add_plain(ct,pt,ct_temp);
+    finish = clock() - start ;
+    cout<<"add_plain                             : "<< finish <<" \\mus"<<endl;
+
+    start = clock();
+    evaluator->add_plain_inplace(ct,pt);
+    finish = clock() - start ;
+    cout<<"add_plain_inplace                     : "<< finish <<" \\mus"<<endl;
+
+    start = clock();
+    evaluator->add_plain(ct,pt_k,ct_temp);
+    finish = clock() - start ;
+    cout<<"add_inplace with one                  : "<< finish <<" \\mus"<<endl;
+
+    start = clock();
+    evaluator->add_plain_inplace(ct,pt_k);
+    finish = clock() - start ;
+    cout<<"add_plain_inplace with one            : "<< finish <<" \\mus"<<endl;
+
+
+    Ciphertext ct2;
+
+    batch_encoder->encode(slat, pt);
+    encryptor->encrypt(pt, ct2);
+
+    start = clock();
+    evaluator->sub(ct2,ct_temp,ct_temp);
+    finish = clock() - start ;
+    cout<<"sub                                   : "<< finish <<" \\mus"<<endl;
+    
+    start = clock();
+    evaluator->sub_inplace(ct,ct_temp);
+    finish = clock() - start ;
+    cout<<"sub_inplace                           : "<< finish <<" \\mus"<<endl;
+
+    start = clock();
+    evaluator->sub_plain(ct,pt,ct_temp);
+    finish = clock() - start ;
+    cout<<"sub_plain                             : "<< finish <<" \\mus"<<endl;
+
+    start = clock();
+    evaluator->sub_plain_inplace(ct,pt);
+    finish = clock() - start ;
+    cout<<"sub_plain_inplace                     : "<< finish <<" \\mus"<<endl;
+
+
+   }
+    stringstream client_send;
+    long client_send_commun=0;
+    client_send_commun+=ct.save(client_send);
+    cout<<"comm. cost                            : "<< client_send_commun/1000 << " KB"<<endl;
     return 0;
 }
 /*

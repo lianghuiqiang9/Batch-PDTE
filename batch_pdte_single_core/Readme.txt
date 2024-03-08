@@ -111,6 +111,11 @@ rrcmp-pdte
 ./rrcmp_pdte -t ../data/breast_31bits/model.json -v ../data/breast_31bits/x_test.csv -r 1 -n 1024 -c 0
 
 
+#single line in different tree
+./tecmp_pdte -t ../data/breast_31bits/model.json -v ../data/spam_11bits/x_test.csv -r 1 -l 3 -m 11 -c 0
+./tecmp_pdte -t ../data/electricity_10bits/model.json -v ../data/electricity_10bits/x_test.csv -r 1 -l 3 -m 11 -c 0
+//29343.2 ms 489541 KB
 
 
-
+#tecmp\_recursive
+1024*13 =13312-bit (up to 8192 bits) 

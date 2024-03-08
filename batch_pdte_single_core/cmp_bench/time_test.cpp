@@ -15,7 +15,7 @@ int main(){
 
     int m = 3;
     //int l = 4; uint64_t log_poly_mod_degree=14; uint64_t prime_bitlength=17; 
-    int l=4; uint64_t log_poly_mod_degree=14; uint64_t prime_bitlength=20;//适用于12比特的数据进行比较
+    int l = 4; uint64_t log_poly_mod_degree=14; uint64_t prime_bitlength=20;//适用于12比特的数据进行比较
     //int l=2; uint64_t log_poly_mod_degree=13; uint64_t prime_bitlength=20;
     int n = l * m;
 

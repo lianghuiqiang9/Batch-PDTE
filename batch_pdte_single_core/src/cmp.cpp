@@ -241,6 +241,45 @@ Ciphertext tecmp(Evaluator *evaluator,GaloisKeys* gal_keys_server, RelinKeys* rl
     return comparisonResult;
 }
 
+//return a > E(b)
+Ciphertext tecmp_recursive(Evaluator *evaluator,GaloisKeys* gal_keys_server, RelinKeys* rlk_server, vector<uint64_t> a,vector<Ciphertext> b, int l,int m,uint64_t m_degree, seal::Ciphertext one_zero_init_cipher){
+    vector<Ciphertext> eq(l);
+    vector<Ciphertext> gt(l);
+
+    if(l == 1){
+        evaluator->rotate_rows(b[0], a[0], *gal_keys_server, gt[0]);
+        return gt[0];
+    }else{
+        for(int i=0;i<l;i++){
+            evaluator->rotate_rows(b[i], a[i], *gal_keys_server, gt[i]);
+            if(a[i]<m_degree-1){
+                evaluator->rotate_rows(b[i], a[i] + 1, *gal_keys_server, eq[i]);
+            }else{
+                eq[i] = one_zero_init_cipher;
+            }
+            evaluator->sub_inplace(eq[i], gt[i]); //eq = eq - gt ;
+        }
+    }
+
+    // result = b > a  = gt_n-1 + eq_n-1 * (... gt_2 + eq_2 * (gt_1 + eq_1 * gt_0))
+    // result = b >= a  = gt_n-1 + eq_n-1 * (... gt_2 + eq_2 * (gt_1 + eq_1 * (gt_0 + eq_0)))
+
+    int depth = log(l)/log(2);
+    for(int i = 0; i < depth ; i++){
+        int temp1 = 1<<i;
+        int temp0 = 1<<(i + 1);
+        //cout<<"temp0 : "<<temp0<<" temp1 : "<<temp1<<endl;
+        for(int j = 0; j < l; j = j + temp0){
+            evaluator->multiply_inplace(gt[j],eq[ j + temp1]);
+            evaluator->relinearize_inplace(gt[j],*rlk_server);
+            evaluator->add_inplace(gt[j], gt[j + temp1]);
+            evaluator->multiply_inplace(eq[j],eq[j + temp1]);
+            evaluator->relinearize_inplace(eq[j],*rlk_server);
+        }   
+    }
+    return gt[0];
+}
+
 //a > E(b)
 vector<Ciphertext> tecmp_encode_b_enc(vector<uint64_t> encrypted_op, seal::BatchEncoder *batch_encoder, seal::Encryptor *encryptor, int l, int m,int slot_count, int row_count, int m_degree, int num_cmps_per_row, int num_slots_per_element){    
     vector<Ciphertext> client_input(l);
@@ -364,8 +403,9 @@ EncryptionParameters tecmp_init(int n,int l,int m){
         exit(0);
     }
 
-    if(m >= (log_poly_mod_degree - 1)){
-        cout<<"params m is too large, please choose the params again"<<endl;
+    if(m >= (log_poly_mod_degree)){
+        cout<<"log_poly_mod_degree :"<<log_poly_mod_degree<<endl;
+        cout<<"params m is too large, need < log_poly_mod_degree, please choose the params again"<<endl;
         exit(0);
     }
     
@@ -373,6 +413,51 @@ EncryptionParameters tecmp_init(int n,int l,int m){
 }
 
 
+EncryptionParameters tecmp_recursive_init(int n,int l,int m){
+    
+    int depth_need_min = log(l)/log(2);
+    if(1<<depth_need_min !=l){
+        cout<<" l must be 2^x, error"<<endl;
+        exit(0);
+    }
+    cout<<"depth_need_min "<< depth_need_min<<endl;
+
+    uint64_t log_poly_mod_degree; uint64_t prime_bitlength; 
+    if(depth_need_min<4){
+        log_poly_mod_degree = 13; prime_bitlength = 17;
+    }else if(depth_need_min<12){
+        log_poly_mod_degree = 14; prime_bitlength = 17;
+    }else{
+        cout<<"params depth_need_min is too large, please choose the params again"<<endl;
+        exit(0);
+    }
+
+    uint64_t poly_modulus_degree=1<<log_poly_mod_degree;
+    EncryptionParameters parms = EncryptionParameters(scheme_type::bfv);
+    parms.set_poly_modulus_degree(poly_modulus_degree);
+    parms.set_plain_modulus(PlainModulus::Batching(poly_modulus_degree, prime_bitlength));
+    
+    if(depth_need_min<4){
+        parms.set_coeff_modulus(CoeffModulus::BFVDefault(poly_modulus_degree));
+    }else if(depth_need_min<8){
+        parms.set_coeff_modulus(CoeffModulus::Create(poly_modulus_degree, { 48, 48, 48, 48, 48, 48, 48 }));
+    }else if (depth_need_min<11){
+        parms.set_coeff_modulus(CoeffModulus::Create(poly_modulus_degree, { 60, 60, 60, 60, 60, 60, 60 }));
+    }else if (depth_need_min<12){
+        parms.set_coeff_modulus(CoeffModulus::BFVDefault(poly_modulus_degree));
+    }else{
+        cout<<"depth_need_min is too large, error"<<endl;
+        exit(0);
+    }
+
+    if(m >= (log_poly_mod_degree)){
+        cout<<"log_poly_mod_degree :"<<log_poly_mod_degree<<endl;
+        cout<<"params m is too large, need < log_poly_mod_degree, please choose the params again"<<endl;
+        exit(0);
+    }
+    
+    return parms;
+}
 
 
 Plaintext init_one_zero_salt(BatchEncoder *batch_encoder, int slot_count,uint64_t num_cmps,uint64_t num_cmps_per_row,uint64_t num_slots_per_element,uint64_t row_count){
