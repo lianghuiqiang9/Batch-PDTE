@@ -210,7 +210,7 @@ EncryptionParameters lrcmp_init(int n){
 }
 
 //return a > E(b)
-Ciphertext tecmp(Evaluator *evaluator,GaloisKeys* gal_keys_server, RelinKeys* rlk_server, vector<uint64_t> a,vector<Ciphertext> b, int l,int m,uint64_t m_degree, seal::Ciphertext one_zero_init_cipher){
+Ciphertext tecmp_base(Evaluator *evaluator,GaloisKeys* gal_keys_server, RelinKeys* rlk_server, vector<uint64_t> a,vector<Ciphertext> b, int l,int m,uint64_t m_degree, seal::Ciphertext one_zero_init_cipher){
     vector<Ciphertext> eq(l);
     vector<Ciphertext> gt(l);
 
@@ -242,7 +242,7 @@ Ciphertext tecmp(Evaluator *evaluator,GaloisKeys* gal_keys_server, RelinKeys* rl
 }
 
 //return a > E(b)
-Ciphertext tecmp_recursive(Evaluator *evaluator,GaloisKeys* gal_keys_server, RelinKeys* rlk_server, vector<uint64_t> a,vector<Ciphertext> b, int l,int m,uint64_t m_degree, seal::Ciphertext one_zero_init_cipher){
+Ciphertext tecmp(Evaluator *evaluator,GaloisKeys* gal_keys_server, RelinKeys* rlk_server, vector<uint64_t> a,vector<Ciphertext> b, int l,int m,uint64_t m_degree, seal::Ciphertext one_zero_init_cipher){
     vector<Ciphertext> eq(l);
     vector<Ciphertext> gt(l);
 
@@ -370,7 +370,7 @@ vector<uint64_t> tecmp_decode_a_gt_b_dec(Ciphertext cipher_result, Decryptor *de
 }
 
 
-EncryptionParameters tecmp_init(int n,int l,int m){
+EncryptionParameters tecmp_base_init(int n,int l,int m){
     
     int depth_need_min = l;
     cout<<"depth_need_min "<< depth_need_min<<endl;
@@ -413,7 +413,7 @@ EncryptionParameters tecmp_init(int n,int l,int m){
 }
 
 
-EncryptionParameters tecmp_recursive_init(int n,int l,int m){
+EncryptionParameters tecmp_init(int n,int l,int m){
     
     int depth_need_min = log(l)/log(2);
     if(1<<depth_need_min !=l){

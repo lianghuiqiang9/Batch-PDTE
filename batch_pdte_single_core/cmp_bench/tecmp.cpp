@@ -18,6 +18,7 @@ using namespace seal;
 
 
 //g++ -o tecmp -O3 tecmp.cpp ../src/cmp.cpp  -I../include -I /usr/local/include/SEAL-4.1 -lseal-4.1
+//
 
 int main(int argc, char* argv[]){
 

@@ -17,7 +17,7 @@ using namespace seal;
 
 
 
-//g++ -o tecmp_recursive -O3 tecmp_recursive.cpp ../src/cmp.cpp  -I../include -I /usr/local/include/SEAL-4.1 -lseal-4.1
+//g++ -o tecmp_base -O3 tecmp_base.cpp ../src/cmp.cpp  -I../include -I /usr/local/include/SEAL-4.1 -lseal-4.1
 
 int main(int argc, char* argv[]){
 
@@ -40,7 +40,7 @@ int main(int argc, char* argv[]){
     long server_send_commun=0;
 
     int n = l * m;
-    EncryptionParameters parms = tecmp_recursive_init(n,l,m);
+    EncryptionParameters parms = tecmp_base_init(n,l,m);
     SEALContext* context = new SEALContext(parms);
     KeyGenerator keygen(*context);
     PublicKey pk;
@@ -110,7 +110,7 @@ int main(int argc, char* argv[]){
     encryptor->encrypt(one_zero_init,one_zero_init_cipher);
 
     clock_t start=clock();
-    Ciphertext result = tecmp_recursive(evaluator, gal_keys_server, rlk_server, server_input, client_input, l, m,m_degree, one_zero_init_cipher);
+    Ciphertext result = tecmp_base(evaluator, gal_keys_server, rlk_server, server_input, client_input, l, m,m_degree, one_zero_init_cipher);
     auto finish = clock()-start;
 
     Plaintext one_zero = init_one_zero_salt(batch_encoder,slot_count,num_cmps,num_cmps_per_row,num_slots_per_element,row_count);
