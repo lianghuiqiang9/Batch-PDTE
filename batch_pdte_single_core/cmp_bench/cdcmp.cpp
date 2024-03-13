@@ -8,14 +8,13 @@
 using namespace std;
 using namespace seal;
 
-
     //random two number for compare
     //plain_op       encrypted_op
     //server_input   client_input
     //a              b
     //a       >      b
 
-//g++ -o lrcmp -O3 lrcmp.cpp ../src/cmp.cpp -I ../include -I /usr/local/include/SEAL-4.1 -lseal-4.1
+//g++ -o cdcmp -O3 cdcmp.cpp ../src/cmp.cpp -I ../include -I /usr/local/include/SEAL-4.1 -lseal-4.1
 
 int main(int argc, char* argv[]){
     int n;// = 32; // n = 2 4 8 16 32 64 128 256 512
@@ -31,8 +30,7 @@ int main(int argc, char* argv[]){
     stringstream server_send;
     long client_send_commun=0;
     long server_send_commun=0;
-    EncryptionParameters parms = lrcmp_init(n);
-    //BCMP初始化公私钥
+    EncryptionParameters parms = cdcmp_init(n);
     SEALContext* context = new SEALContext(parms);
     KeyGenerator keygen(*context);
     PublicKey pk;
@@ -47,105 +45,88 @@ int main(int argc, char* argv[]){
     GaloisKeys* gal_keys_server = new GaloisKeys();
     keygen.create_galois_keys(*gal_keys_server);    
     uint64_t plain_modulus = parms.plain_modulus().value();
-
     uint64_t slot_count = batch_encoder->slot_count();
     uint64_t row_count = slot_count / 2;
-
-    //Encode plain_op and encrypted_op
-    uint64_t num_cmps = slot_count - 1;//Reserve a padding bit to prevent the plaintext from being 0
+    cout << "Plaintext matrix row size: " << row_count << endl;
+    uint64_t num_slots_per_element = n;
+    uint64_t num_cmps_per_row = row_count / n; 
+    uint64_t num_cmps = 2 * num_cmps_per_row;
     //cout<<"num_cmps "<<num_cmps<<endl;
     
     vector<uint64_t> encrypted_op; 
     vector<uint64_t> plain_op;
-    vector<vector<uint64_t>> encrypted_op_encode; 
-    vector<vector<uint64_t>> plain_op_encode; 
-    vector<Ciphertext> client_input(n);
-    vector<Plaintext> server_input(n);
+    vector<uint64_t> encrypted_op_encode; 
+    vector<uint64_t> plain_op_encode;
+    Ciphertext client_input;
+    Plaintext server_input;
 
     srand(time(NULL));
-    if(n <= 64){
+    if(n < 64){
         for(int i = 0; i<num_cmps ;i++){
             encrypted_op.push_back( (uint64_t)(rand() + (1<<31) * rand()) % ((uint64_t)1 << n));
         }
         for(int i = 0; i<num_cmps ;i++){
             plain_op.push_back( (uint64_t)(rand() + (1<<31) * rand()) % ((uint64_t)1 << n));
         }
-        encrypted_op_encode = lrcmp_encode_b(encrypted_op,n,slot_count,row_count);
+        encrypted_op_encode = cdcmp_encode_b(encrypted_op,n,slot_count,row_count,num_cmps_per_row);
         Plaintext plaintext; 
-        for(int i = 0 ; i < n; i++){
-            batch_encoder->encode(encrypted_op_encode[i], plaintext);
-            encryptor->encrypt(plaintext, client_input[i]);
-        }
-        //
-        plain_op_encode = lrcmp_encode_a(plain_op,n,slot_count,row_count);
-        for(int i = 0 ; i < n; i++){
-            batch_encoder->encode(plain_op_encode[i], server_input[i]);
-        }
+        batch_encoder->encode(encrypted_op_encode, plaintext);
+        encryptor->encrypt(plaintext, client_input);
+
+        plain_op_encode = cdcmp_encode_a(plain_op,num_slots_per_element,slot_count,row_count,num_cmps_per_row);
+        batch_encoder->encode(plain_op_encode, server_input);
     }else{
-        for(int i = 0; i < n;i++){
-            vector<uint64_t> temp(num_cmps,0);
-            for(int j = 0; j<num_cmps; j++){
-                temp[j] = 1 - rand()%2; // 1-b
-            }
-            encrypted_op_encode.push_back(temp);
+        for(int i=0;i<slot_count;i++){
+            encrypted_op_encode.push_back(1 - rand()%2);
         }
-
+        for(int i=0;i<slot_count;i++){
+            plain_op_encode.push_back(rand()%2);
+        }
         Plaintext plaintext; 
-        for(int i = 0 ; i < n; i++){
-            batch_encoder->encode(encrypted_op_encode[i], plaintext);
-            encryptor->encrypt(plaintext, client_input[i]);
-        }
-
-        for(int i = 0; i < n;i++){
-            vector<uint64_t> temp(num_cmps,0);
-            for(int j = 0; j<num_cmps; j++){
-                temp[j] = rand()%2; //a
-            }
-            plain_op_encode.push_back(temp);
-        }
-        for(int i = 0 ; i < n; i++){
-            batch_encoder->encode(plain_op_encode[i], server_input[i]);
-        }
+        batch_encoder->encode(encrypted_op_encode, plaintext);
+        encryptor->encrypt(plaintext, client_input);
+        batch_encoder->encode(plain_op_encode, server_input);
     }
 
-    for(auto e:client_input){
 
-        client_send_commun+=e.save(client_send);
+    client_send_commun+=client_input.save(client_send);
 
-    }
-
-    clock_t start = clock();
-    Ciphertext comparisonResult = lrcmp(evaluator,rlk_server,n,server_input,client_input);
+    clock_t start=clock();
+    Ciphertext result = cdcmp(evaluator,gal_keys_server,rlk_server,num_slots_per_element,server_input,client_input);
     auto finish = clock()-start;
+    
+    server_send_commun+=result.save(server_send);
 
-    server_send_commun+=comparisonResult.save(server_send);
 
-    Plaintext pt;
-    decryptor->decrypt(comparisonResult, pt);
-    vector<uint64_t> ans;
-    batch_encoder->decode(pt, ans);
+    
+    Plaintext one_zero = init_one_zero_salt(batch_encoder,slot_count,num_cmps,num_cmps_per_row,num_slots_per_element,row_count);
+    //result = clear_cipher_result(evaluator, rlk_server, result, one_zero);
+    vector<uint64_t> ans = cdcmp_decode_a_gt_b_dec(result,decryptor,batch_encoder,num_cmps,num_slots_per_element,num_cmps_per_row,row_count);
 
     bool correct = true;
-    for(int i = 0;i < num_cmps;i++){
+    for(int i = 0; i < num_cmps ; i++){
         uint64_t actural_result = 0;
         //plain_op > encrypted_op[*][j]
-        for(int k = n-1;k>=0;k--){
-            if(plain_op_encode[k][i] > (1 - encrypted_op_encode[k][i])){
+        for(int k = i*n + n-1;k>=i*n;k--){
+            if(plain_op_encode[k] > 1 - encrypted_op_encode[k]){
                 actural_result = 1;
                 break;
-            }else if(plain_op_encode[k][i] == (1 - encrypted_op_encode[k][i])){
+            }else if(plain_op_encode[k] == 1 - encrypted_op_encode[k]){
                 continue;
             }else{
                 break;
             }
         }
-        if (!(ans[i] == actural_result)){
+        
+        if( !( ans[i] == actural_result ) ){
             cout<<"In "<< i <<" row is  error "<< endl;
             cout<<ans[i]  <<"  "<<actural_result << endl;
             correct = false;
-        }
+            exit(0);
+        }            
     }
-        long comm = client_send_commun + server_send_commun;
+
+long comm = client_send_commun + server_send_commun;
     //输出结果
 cout<<    " decrypt result res[0] == b > a            : "<< correct 
     << ",\n bit precision                             : "<< n 
@@ -155,6 +136,5 @@ cout<<    " decrypt result res[0] == b > a            : "<< correct
     << " KB\n amortized time cost                       : "<< (float)finish/1000/num_cmps 
     << " ms\n amortized comm. cost                      : "<< (float)comm/1000 /num_cmps <<" KB"
     << endl;
-
     return 0;
 }

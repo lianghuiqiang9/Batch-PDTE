@@ -11,7 +11,7 @@
 using namespace std;
 using namespace seal;
 
-void pdte_tecmp_base_rec(vector<Ciphertext>& out,Node& node, Evaluator *evaluator,GaloisKeys* gal_keys_server, RelinKeys *rlk_server, vector<vector<Ciphertext>> client_input, Plaintext one,int l,int m,uint64_t m_degree, BatchEncoder *batch_encoder,int slot_count, int plain_modulus, seal::Ciphertext one_zero_init_cipher){
+void pdte_tecmp_norm_rec(vector<Ciphertext>& out,Node& node, Evaluator *evaluator,GaloisKeys* gal_keys_server, RelinKeys *rlk_server, vector<vector<Ciphertext>> client_input, Plaintext one,int l,int m,uint64_t m_degree, BatchEncoder *batch_encoder,int slot_count, int plain_modulus, seal::Ciphertext one_zero_init_cipher){
     if (node.is_leaf()){
         out.push_back(node.value);
     }else{
@@ -19,18 +19,18 @@ void pdte_tecmp_base_rec(vector<Ciphertext>& out,Node& node, Evaluator *evaluato
         //left      0   1  right  *  left       1   0     right
         //note that the index of client_data in the tree starts from 0
         //cmp
-        node.right->value = tecmp_base(evaluator, gal_keys_server,rlk_server, node.threshold_bitv, client_input[ node.feature_index ],l, m, m_degree, one_zero_init_cipher);
+        node.right->value = tecmp_norm(evaluator, gal_keys_server,rlk_server, node.threshold_bitv, client_input[ node.feature_index ],l, m, m_degree, one_zero_init_cipher);
         evaluator->negate(node.right->value, node.left->value);
         evaluator->add_plain_inplace(node.left->value, one);
         //travel
         evaluator->add_inplace(node.left->value, node.value);
         evaluator->add_inplace(node.right->value, node.value);
-        pdte_tecmp_base_rec(out, *(node.left), evaluator,gal_keys_server, rlk_server, client_input,one,l,m,m_degree,  batch_encoder,slot_count, plain_modulus,one_zero_init_cipher);
-        pdte_tecmp_base_rec(out, *(node.right), evaluator,gal_keys_server, rlk_server, client_input,one,l,m,m_degree,  batch_encoder,slot_count, plain_modulus,one_zero_init_cipher);
+        pdte_tecmp_norm_rec(out, *(node.left), evaluator,gal_keys_server, rlk_server, client_input,one,l,m,m_degree,  batch_encoder,slot_count, plain_modulus,one_zero_init_cipher);
+        pdte_tecmp_norm_rec(out, *(node.right), evaluator,gal_keys_server, rlk_server, client_input,one,l,m,m_degree,  batch_encoder,slot_count, plain_modulus,one_zero_init_cipher);
     }
 }
 
-//g++ -o tecmp_base_pdte -O3 tecmp_base_pdte.cpp src/utils.cpp src/cmp.cpp src/node.cpp src/pdte.cpp -I./include -I /usr/local/include/SEAL-4.1 -lseal-4.1
+//g++ -o tecmp_norm_pdte -O3 tecmp_norm_pdte.cpp src/utils.cpp src/cmp.cpp src/node.cpp src/pdte.cpp -I./include -I /usr/local/include/SEAL-4.1 -lseal-4.1
 
 int main(int argc, char* argv[]){
     if (argc < 3) {
@@ -88,9 +88,9 @@ int main(int argc, char* argv[]){
 
     EncryptionParameters parms;
     if(clr==1){
-        parms = tecmp_base_init(n,10,m);
+        parms = tecmp_norm_init(n,10,m);
     }else{
-        parms = tecmp_base_init(n,l,m);
+        parms = tecmp_norm_init(n,l,m);
     }
     SEALContext* context = new SEALContext(parms);
     KeyGenerator keygen(*context);
@@ -163,7 +163,7 @@ int main(int argc, char* argv[]){
 
     vector<Ciphertext> out1;
     start = clock();
-    pdte_tecmp_base_rec( out1, root, evaluator, gal_keys_server, rlk_server, client_input, one, l, m,m_degree, batch_encoder, slot_count, plain_modulus, one_zero_init_cipher);
+    pdte_tecmp_norm_rec( out1, root, evaluator, gal_keys_server, rlk_server, client_input, one, l, m,m_degree, batch_encoder, slot_count, plain_modulus, one_zero_init_cipher);
 
     vector<uint64_t> leaf_vec;
     leaf_extract_rec(leaf_vec, root);
@@ -208,7 +208,7 @@ int main(int argc, char* argv[]){
 
     if(clr==1){
         cout<<"clr process"<<endl;
-        out = tecmp_rrcmp_pdte_clear_line_relation(batch_encoder,evaluator,out,leaf_num,data_m,slot_count,row_count,num_cmps_per_row,num_slots_per_element);
+        out = tecmp_cdcmp_pdte_clear_line_relation(batch_encoder,evaluator,out,leaf_num,data_m,slot_count,row_count,num_cmps_per_row,num_slots_per_element);
     }
     clock_t finish = clock()-start; start = clock();
 

@@ -208,7 +208,7 @@ int main(int argc, char* argv[]){
 
     if(clr==1){
         cout<<"clr process"<<endl;
-        out = tecmp_rrcmp_pdte_clear_line_relation(batch_encoder,evaluator,out,leaf_num,data_m,slot_count,row_count,num_cmps_per_row,num_slots_per_element);
+        out = tecmp_cdcmp_pdte_clear_line_relation(batch_encoder,evaluator,out,leaf_num,data_m,slot_count,row_count,num_cmps_per_row,num_slots_per_element);
     }
     clock_t finish = clock()-start; start = clock();
 

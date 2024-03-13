@@ -34,9 +34,7 @@ std::vector<std::vector<uint64_t>> read_csv_to_vector(std::string address,int da
 
     // read csv line by line
     int i=0;
-    //for(int i=0;i<data_m;i++){
     while(i<data_m && std::getline(file, line)){
-        //std::getline(file, line);
         std::vector<uint64_t> row;
         std::stringstream lineStream(line);
         std::string cell;
@@ -121,10 +119,7 @@ int main(int argc, char* argv[])
     cout<<"attribute_vec_filename : "<< attribute_vec_filename<<endl;
     vector<vector<uint64_t>> client_data = read_csv_to_vector(attribute_vec_filename, 3);
     vector<uint64_t> input = client_data[0];
-    for(auto e: input){
-        cout<<e<<" ";
-    }cout<<endl;
-    //vector<uint64_t> input = read_input_from_file(attribute_vec_filename);
+    for(auto e: input){ cout<<e<<" ";}cout<<endl;
 
     QueryParameters* query_parameters = new QueryParameters(bitlength, input.size(), hamming_weight, 2, path_eval, comparison, write_to_file);
     Client* client = new Client();

@@ -336,9 +336,7 @@ void Client::submit_classification_with_params(
 
     vector<Ciphertext> __query_ciphertexts = attribute_vector_to_ciphertext(classification_vec, query_parameters);
     send(__query_ciphertexts);
-    cout<<"*************__query_ciphertexts size() "<<__query_ciphertexts.size()<<endl;;
-
-
+    
     query_parameters->metrics_["time_query"] = time_query.end_and_get();
 }
 
@@ -389,11 +387,9 @@ bool Client::end_to_end_evaluation(QueryParameters* query_parameters,
 
     // Extracting Response
     time_extract_response.start();
-        std::vector<Plaintext> _response_pts = this->load_and_decrypt(query_parameters);
+    std::vector<Plaintext> _response_pts = this->load_and_decrypt(query_parameters);
         
-        cout<<"*************_response_pts size() "<<_response_pts.size()<<endl;
-
-        uint64_t response = this->extract_response_to_classification(_response_pts, query_parameters);
+    uint64_t response = this->extract_response_to_classification(_response_pts, query_parameters);
     query_parameters->metrics_["time_extract_response"] = time_extract_response.end_and_get();
     std::cout << "     Response: " << response << std::endl;
 

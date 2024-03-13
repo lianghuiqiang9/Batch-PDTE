@@ -11,7 +11,7 @@
 using namespace std;
 using namespace seal;
 
-void pdte_lrcmp_rec(vector<Ciphertext>& out,Node& node, Evaluator *evaluator,GaloisKeys* gal_keys_server, RelinKeys *rlk_server, vector<vector<Ciphertext>> client_input, Plaintext one,int n, BatchEncoder *batch_encoder,int slot_count, int row_count, int num_cmps){
+void pdte_rdcmp_rec(vector<Ciphertext>& out,Node& node, Evaluator *evaluator,GaloisKeys* gal_keys_server, RelinKeys *rlk_server, vector<vector<Ciphertext>> client_input, Plaintext one,int n, BatchEncoder *batch_encoder,int slot_count, int row_count, int num_cmps){
     if (node.is_leaf()){
         out.push_back(node.value);
     }else{
@@ -19,18 +19,18 @@ void pdte_lrcmp_rec(vector<Ciphertext>& out,Node& node, Evaluator *evaluator,Gal
         //left      0   1  right  *  left       1   0     right
         //note that the index of client_data in the tree starts from 0
         //cmp
-        node.right->value = lrcmp(evaluator,rlk_server, n, node.threshold_bitv_plain, client_input[ node.feature_index ]);
+        node.right->value = rdcmp(evaluator,rlk_server, n, node.threshold_bitv_plain, client_input[ node.feature_index ]);
         evaluator->negate(node.right->value, node.left->value);
         evaluator->add_plain_inplace(node.left->value, one);
         //travel
         evaluator->add_inplace(node.left->value, node.value);
         evaluator->add_inplace(node.right->value, node.value);
-        pdte_lrcmp_rec(out, *(node.left), evaluator,gal_keys_server, rlk_server, client_input,one,n, batch_encoder,slot_count, row_count, num_cmps);
-        pdte_lrcmp_rec(out, *(node.right), evaluator,gal_keys_server, rlk_server, client_input,one,n, batch_encoder,slot_count, row_count, num_cmps);
+        pdte_rdcmp_rec(out, *(node.left), evaluator,gal_keys_server, rlk_server, client_input,one,n, batch_encoder,slot_count, row_count, num_cmps);
+        pdte_rdcmp_rec(out, *(node.right), evaluator,gal_keys_server, rlk_server, client_input,one,n, batch_encoder,slot_count, row_count, num_cmps);
     }
 }
 
-//g++ -o lrcmp_pdte -O3 lrcmp_pdte.cpp src/utils.cpp src/cmp.cpp src/node.cpp src/pdte.cpp -I./include -I /usr/local/include/SEAL-4.1 -lseal-4.1
+//g++ -o rdcmp_pdte -O3 rdcmp_pdte.cpp src/utils.cpp src/cmp.cpp src/node.cpp src/pdte.cpp -I./include -I /usr/local/include/SEAL-4.1 -lseal-4.1
 
 int main(int argc, char* argv[]){
 
@@ -79,9 +79,9 @@ int main(int argc, char* argv[]){
     
     EncryptionParameters parms;
     if(clr){
-        parms = rrcmp_init(1024);
+        parms = cdcmp_init(1024);
     }else{
-        parms = rrcmp_init(n);
+        parms = cdcmp_init(n);
     }
     SEALContext* context = new SEALContext(parms);
     KeyGenerator keygen(*context);
@@ -118,7 +118,7 @@ int main(int argc, char* argv[]){
     vector<vector<uint64_t>> index_feat = Transpose(client_data); 
     vector<vector<Ciphertext>> client_input;
     for(int i = 0; i < index_feat.size(); i++){
-        vector<vector<uint64_t>> encrypted_op_encode = lrcmp_encode_b(index_feat[i],n,slot_count,row_count);
+        vector<vector<uint64_t>> encrypted_op_encode = rdcmp_encode_b(index_feat[i],n,slot_count,row_count);
         vector<Ciphertext> temp(n);
         Plaintext plaintext; 
         for(int i = 0 ; i < n; i++){
@@ -150,13 +150,13 @@ int main(int argc, char* argv[]){
 
     Plaintext one = init_one(batch_encoder, slot_count);
     root.value = init_cipher_zero(batch_encoder, encryptor, slot_count);
-    root.lrcmp_pdte_init(batch_encoder,n,num_cmps,slot_count,row_count);
+    root.rdcmp_pdte_init(batch_encoder,n,num_cmps,slot_count,row_count);
 
     cout<<"Init the tree,                          run time is "<<(clock()-start)/1000 <<" ms"<<endl;
 
     vector<Ciphertext> out1;
     start = clock();
-    pdte_lrcmp_rec(out1, root, evaluator, gal_keys_server, rlk_server, client_input, one, n, batch_encoder, slot_count, row_count,num_cmps);
+    pdte_rdcmp_rec(out1, root, evaluator, gal_keys_server, rlk_server, client_input, one, n, batch_encoder, slot_count, row_count,num_cmps);
     
     //out1 为 0 1 1 1 1 2 2 2 2 2 2 3 3 3 3 4 共 leaf_num 列 每个密文的同一个插槽位置是结果
 
@@ -207,7 +207,7 @@ int main(int argc, char* argv[]){
     //去掉行相关性。
     if(clr){
         cout<<"clr process"<<endl;
-        out = lrcmp_pdte_clear_line_relation(batch_encoder,evaluator,out,leaf_num,data_m,slot_count);
+        out = rdcmp_pdte_clear_line_relation(batch_encoder,evaluator,out,leaf_num,data_m,slot_count);
     }
 
     clock_t finish = clock()-start; start = clock();

@@ -36,7 +36,7 @@ void Server::fetch_model_for_benchmark(const string &fname) {
     //auto root = p.parseTree(fname);
     cout<<"fetch_model_for_benchmark"<<endl;
     auto root = Node2(fname);
-    print_tree(root);
+    //print_tree(root);
 
     stack<pair<Node*, int>> unvisited;
     unvisited.emplace(root, 0);
@@ -180,8 +180,6 @@ void Server::do_server_computation(stringstream& data_stream, size_t input_size,
     Timer server_time;
     server_time.start();
 
-    clock_t start = clock();
-
     Timer gen_comp_bits_time;
     gen_comp_bits_time.start();
 
@@ -248,8 +246,6 @@ void Server::do_server_computation(stringstream& data_stream, size_t input_size,
         evaluator->add_inplace(indicators, node->ctxt);
     }
 
-    auto finish = clock()-start;
-    cout<<"*************finish time "<<finish<<endl;;
     
     metrics->metrics_["time_server"] = server_time.end_and_get();
 

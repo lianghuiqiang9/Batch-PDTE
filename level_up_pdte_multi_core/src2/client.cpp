@@ -175,8 +175,6 @@ bool Client::run_protocol(const vector<uint64_t> &attr_vec, const Config &config
     metrics->metrics_["num_attr"]=attr_vec.size();
     vector<Plaintext> encoded = encode_attr_vec(attr_vec, num_ctxt_per_value);
 
-    cout<<"*************encoded size() "<<encoded.size()<<endl;// attr_vec.size() * 1 or 2 or 3
-
     encrypt_and_send(encoded, _verbose);
     metrics->metrics_["time_send_input"] = time_send_input.end_and_get();
 
@@ -194,8 +192,6 @@ bool Client::run_protocol(const vector<uint64_t> &attr_vec, const Config &config
     {
         size_t output_size = (mult_path ? 1 : 2); // Specify how many cts are sent over the network
         std::vector<Plaintext> _response_pts = load_and_decrypt(output_size, _verbose);
-
-        cout<<"*************_response_pts size() "<<_response_pts.size()<<endl;
 
         uint64_t result = extract_response(_response_pts, mult_path);
         uint64_t correct_answer = server->evaluate_plain(attr_vec);

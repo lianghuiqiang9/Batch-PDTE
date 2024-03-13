@@ -158,7 +158,7 @@ void leaf_num_rec(Node& a, int &num){
     }
 }
 
-void rrcmp_pdte_init_rec(Node& a, seal::BatchEncoder *batch_encoder,int num_cmps, int num_slots_per_element, uint64_t slot_count,uint64_t row_count, uint64_t num_cmps_per_row){
+void cdcmp_pdte_init_rec(Node& a, seal::BatchEncoder *batch_encoder,int num_cmps, int num_slots_per_element, uint64_t slot_count,uint64_t row_count, uint64_t num_cmps_per_row){
     if (a.is_leaf()){
     }else{
         vector<uint64_t> plain_op;
@@ -175,17 +175,17 @@ void rrcmp_pdte_init_rec(Node& a, seal::BatchEncoder *batch_encoder,int num_cmps
         }
 
         Plaintext server_input;
-        vector<uint64_t> plain_op_encode = rrcmp_encode_a(plain_op,num_slots_per_element,slot_count,row_count,num_cmps_per_row);
+        vector<uint64_t> plain_op_encode = cdcmp_encode_a(plain_op,num_slots_per_element,slot_count,row_count,num_cmps_per_row);
         batch_encoder->encode(plain_op_encode, server_input);
         a.threshold_bitv_plain.push_back(server_input);
-        rrcmp_pdte_init_rec(*(a.left), batch_encoder, num_cmps, num_slots_per_element, slot_count,row_count, num_cmps_per_row);
-        rrcmp_pdte_init_rec(*(a.right), batch_encoder, num_cmps, num_slots_per_element, slot_count,row_count, num_cmps_per_row);
+        cdcmp_pdte_init_rec(*(a.left), batch_encoder, num_cmps, num_slots_per_element, slot_count,row_count, num_cmps_per_row);
+        cdcmp_pdte_init_rec(*(a.right), batch_encoder, num_cmps, num_slots_per_element, slot_count,row_count, num_cmps_per_row);
     }
 }
 
 
-void Node::rrcmp_pdte_init(seal::BatchEncoder *batch_encoder,int num_cmps, int num_slots_per_element, uint64_t slot_count,uint64_t row_count, uint64_t num_cmps_per_row) {
-    rrcmp_pdte_init_rec(*this, batch_encoder, num_cmps, num_slots_per_element, slot_count,row_count, num_cmps_per_row);
+void Node::cdcmp_pdte_init(seal::BatchEncoder *batch_encoder,int num_cmps, int num_slots_per_element, uint64_t slot_count,uint64_t row_count, uint64_t num_cmps_per_row) {
+    cdcmp_pdte_init_rec(*this, batch_encoder, num_cmps, num_slots_per_element, slot_count,row_count, num_cmps_per_row);
 }
 
 void tecmp_pdte_init_rec(Node& a, int l,int m){
@@ -206,7 +206,7 @@ void Node::tecmp_pdte_init(int l,int m) {
     tecmp_pdte_init_rec(*this, l, m);
 }
 
-void lrcmp_pdte_init_rec(Node& a, seal::BatchEncoder *batch_encoder,int n, int num_cmps, uint64_t slot_count, uint64_t row_count){
+void rdcmp_pdte_init_rec(Node& a, seal::BatchEncoder *batch_encoder,int n, int num_cmps, uint64_t slot_count, uint64_t row_count){
     if (a.is_leaf()){
     }else{
         vector<uint64_t> plain_op;
@@ -214,18 +214,18 @@ void lrcmp_pdte_init_rec(Node& a, seal::BatchEncoder *batch_encoder,int n, int n
         for(int i = 0; i < num_cmps ;i++){
             plain_op.push_back( a.threshold);
         }
-        vector<vector<uint64_t>> plain_op_encode = lrcmp_encode_a(plain_op,n,slot_count,row_count);
+        vector<vector<uint64_t>> plain_op_encode = rdcmp_encode_a(plain_op,n,slot_count,row_count);
         for(int i = 0 ; i < n; i++){
             batch_encoder->encode(plain_op_encode[i], server_input[i]);
         }
         a.threshold_bitv_plain = server_input;
-        lrcmp_pdte_init_rec(*(a.left), batch_encoder,n, num_cmps, slot_count,row_count);
-        lrcmp_pdte_init_rec(*(a.right), batch_encoder,n, num_cmps, slot_count,row_count);
+        rdcmp_pdte_init_rec(*(a.left), batch_encoder,n, num_cmps, slot_count,row_count);
+        rdcmp_pdte_init_rec(*(a.right), batch_encoder,n, num_cmps, slot_count,row_count);
     }
 }
 
-void Node::lrcmp_pdte_init(seal::BatchEncoder *batch_encoder,int n, int num_cmps, uint64_t slot_count,uint64_t row_count ) {
-    lrcmp_pdte_init_rec(*this, batch_encoder, n, num_cmps,slot_count,row_count);
+void Node::rdcmp_pdte_init(seal::BatchEncoder *batch_encoder,int n, int num_cmps, uint64_t slot_count,uint64_t row_count ) {
+    rdcmp_pdte_init_rec(*this, batch_encoder, n, num_cmps,slot_count,row_count);
 }
 
 /**/

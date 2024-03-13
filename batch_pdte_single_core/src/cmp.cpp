@@ -3,7 +3,7 @@
 
 
 //a>b
-Ciphertext rrcmp(Evaluator *evaluator,GaloisKeys* gal_keys_server, RelinKeys* rlk_server, int n,seal::Plaintext a, seal::Ciphertext b){
+Ciphertext cdcmp(Evaluator *evaluator,GaloisKeys* gal_keys_server, RelinKeys* rlk_server, int n,seal::Plaintext a, seal::Ciphertext b){
     Ciphertext eq;
     Ciphertext gt;
     evaluator->multiply_plain(b,a,gt);
@@ -30,7 +30,7 @@ Ciphertext rrcmp(Evaluator *evaluator,GaloisKeys* gal_keys_server, RelinKeys* rl
 }
 
 //1-b
-vector<uint64_t> rrcmp_encode_b(vector<uint64_t> b,int num_slots_per_element, uint64_t slot_count,uint64_t row_count, uint64_t num_cmps_per_row){
+vector<uint64_t> cdcmp_encode_b(vector<uint64_t> b,int num_slots_per_element, uint64_t slot_count,uint64_t row_count, uint64_t num_cmps_per_row){
     vector<uint64_t> b_v(slot_count, 0ULL);
         for(int j = 0; j < num_cmps_per_row; j++){
             for(int i = 0 ; i < num_slots_per_element; i++){ 
@@ -44,7 +44,7 @@ vector<uint64_t> rrcmp_encode_b(vector<uint64_t> b,int num_slots_per_element, ui
 }
 
 //a
-vector<uint64_t> rrcmp_encode_a(vector<uint64_t> a,int num_slots_per_element, uint64_t slot_count,uint64_t row_count, uint64_t num_cmps_per_row){
+vector<uint64_t> cdcmp_encode_a(vector<uint64_t> a,int num_slots_per_element, uint64_t slot_count,uint64_t row_count, uint64_t num_cmps_per_row){
     vector<uint64_t> a_v(slot_count, 0ULL);
     for(int j = 0; j < num_cmps_per_row; j++){
         for(int i = 0 ; i < num_slots_per_element; i++){ 
@@ -63,7 +63,7 @@ Ciphertext clear_cipher_result( Evaluator *evaluator, RelinKeys *rlk_server, Cip
     return ans;
 }
 
-vector<uint64_t> rrcmp_decode_a_gt_b_dec(Ciphertext cipher_result, Decryptor *decryptor, BatchEncoder *batch_encoder, uint64_t num, uint64_t num_slots_per_element, uint64_t num_cmps_per_row, uint64_t row_count){
+vector<uint64_t> cdcmp_decode_a_gt_b_dec(Ciphertext cipher_result, Decryptor *decryptor, BatchEncoder *batch_encoder, uint64_t num, uint64_t num_slots_per_element, uint64_t num_cmps_per_row, uint64_t row_count){
     Plaintext pt;
     decryptor->decrypt(cipher_result, pt);
     vector<uint64_t> res;
@@ -79,7 +79,7 @@ vector<uint64_t> rrcmp_decode_a_gt_b_dec(Ciphertext cipher_result, Decryptor *de
     return ans;            
 }
 
-EncryptionParameters rrcmp_init(int n){
+EncryptionParameters cdcmp_init(int n){
     int depth_need_min = log(n)/log(2) + 1;
     cout<<"depth_need_min = "<<depth_need_min<<endl;
     uint64_t log_poly_mod_degree; uint64_t prime_bitlength; 
@@ -116,7 +116,7 @@ EncryptionParameters rrcmp_init(int n){
 }
 
 //a > E(b)
-Ciphertext lrcmp(Evaluator *evaluator,RelinKeys* rlk_server, int n,std::vector<seal::Plaintext> a, std::vector<seal::Ciphertext> b){
+Ciphertext rdcmp(Evaluator *evaluator,RelinKeys* rlk_server, int n,std::vector<seal::Plaintext> a, std::vector<seal::Ciphertext> b){
     vector<Ciphertext> eq(n);
     vector<Ciphertext> gt(n);
 
@@ -147,7 +147,7 @@ Ciphertext lrcmp(Evaluator *evaluator,RelinKeys* rlk_server, int n,std::vector<s
 }
 
 //a
-vector<vector<uint64_t>> lrcmp_encode_a(vector<uint64_t> a,int n, uint64_t slot_count, uint64_t row_count){
+vector<vector<uint64_t>> rdcmp_encode_a(vector<uint64_t> a,int n, uint64_t slot_count, uint64_t row_count){
     vector<vector<uint64_t>> a_v;
     for(int i = 0 ; i < n; i++){
         vector<uint64_t> temp(slot_count, 0ULL);
@@ -161,7 +161,7 @@ vector<vector<uint64_t>> lrcmp_encode_a(vector<uint64_t> a,int n, uint64_t slot_
 }
 
 // 1-b
-vector<vector<uint64_t>> lrcmp_encode_b(vector<uint64_t> b,int n, uint64_t slot_count, uint64_t row_count){
+vector<vector<uint64_t>> rdcmp_encode_b(vector<uint64_t> b,int n, uint64_t slot_count, uint64_t row_count){
     vector<vector<uint64_t>> b_v;
     for(int i = 0 ; i < n; i++){
         vector<uint64_t> temp(slot_count, 0ULL);
@@ -174,7 +174,7 @@ vector<vector<uint64_t>> lrcmp_encode_b(vector<uint64_t> b,int n, uint64_t slot_
     return b_v;
 }
 
-EncryptionParameters lrcmp_init(int n){
+EncryptionParameters rdcmp_init(int n){
     int depth_need_min = log(n)/log(2) + 1;
     cout<<"depth_need_min = "<<depth_need_min<<endl;
    
@@ -210,7 +210,7 @@ EncryptionParameters lrcmp_init(int n){
 }
 
 //return a > E(b)
-Ciphertext tecmp_base(Evaluator *evaluator,GaloisKeys* gal_keys_server, RelinKeys* rlk_server, vector<uint64_t> a,vector<Ciphertext> b, int l,int m,uint64_t m_degree, seal::Ciphertext one_zero_init_cipher){
+Ciphertext tecmp_norm(Evaluator *evaluator,GaloisKeys* gal_keys_server, RelinKeys* rlk_server, vector<uint64_t> a,vector<Ciphertext> b, int l,int m,uint64_t m_degree, seal::Ciphertext one_zero_init_cipher){
     vector<Ciphertext> eq(l);
     vector<Ciphertext> gt(l);
 
@@ -370,7 +370,7 @@ vector<uint64_t> tecmp_decode_a_gt_b_dec(Ciphertext cipher_result, Decryptor *de
 }
 
 
-EncryptionParameters tecmp_base_init(int n,int l,int m){
+EncryptionParameters tecmp_norm_init(int n,int l,int m){
     
     int depth_need_min = l;
     cout<<"depth_need_min "<< depth_need_min<<endl;

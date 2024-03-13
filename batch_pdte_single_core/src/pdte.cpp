@@ -59,7 +59,7 @@ Plaintext init_salt_full(BatchEncoder *batch_encoder, int slot_count, int num_cm
 }
 
 
-vector<vector<Ciphertext>> lrcmp_pdte_clear_line_relation(BatchEncoder *batch_encoder, Evaluator *evaluator, vector<vector<Ciphertext>> out,int leaf_num,int data_m,uint64_t slot_count){
+vector<vector<Ciphertext>> rdcmp_pdte_clear_line_relation(BatchEncoder *batch_encoder, Evaluator *evaluator, vector<vector<Ciphertext>> out,int leaf_num,int data_m,uint64_t slot_count){
     srand((unsigned)time(NULL));
     vector<uint64_t> leaf_num_permutation = random_permutation(leaf_num); //0 1 2 3 ... leaf_num
     vector<Ciphertext> x(0);
@@ -113,7 +113,7 @@ vector<vector<Ciphertext>> lrcmp_pdte_clear_line_relation(BatchEncoder *batch_en
     return out;
 }
 
-vector<vector<Ciphertext>> tecmp_rrcmp_pdte_clear_line_relation(BatchEncoder *batch_encoder, Evaluator *evaluator, vector<vector<Ciphertext>> out,int leaf_num,int data_m,uint64_t slot_count, uint64_t row_count, uint64_t num_cmps_per_row, uint64_t num_slots_per_element){
+vector<vector<Ciphertext>> tecmp_cdcmp_pdte_clear_line_relation(BatchEncoder *batch_encoder, Evaluator *evaluator, vector<vector<Ciphertext>> out,int leaf_num,int data_m,uint64_t slot_count, uint64_t row_count, uint64_t num_cmps_per_row, uint64_t num_slots_per_element){
     srand((unsigned)time(NULL));
     vector<uint64_t> leaf_num_permutation = random_permutation(leaf_num); //0 1 2 3 ... leaf_num
     vector<Ciphertext> x(0);

@@ -94,7 +94,7 @@ void TreeEvaluationServer::initialize_model(
     //Parser p;
     //this->tree_root = p.parseTree(model_filename);
 
-    cout<<"fetch_model2"<<endl;
+    cout<<"fetch_model_for_benchmark"<<endl;
     this->tree_root = Node2(model_filename);
     //print_tree(this->tree_root);
 

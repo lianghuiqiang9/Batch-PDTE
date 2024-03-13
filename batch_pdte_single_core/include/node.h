@@ -40,8 +40,8 @@ public:
     uint64_t eval(const std::vector<uint64_t> &features);
     int leaf_num();
     void tecmp_pdte_init(int l,int m);
-    void rrcmp_pdte_init(seal::BatchEncoder *batch_encoder,int num_cmps, int num_slots_per_element, uint64_t slot_count,uint64_t row_count, uint64_t num_cmps_per_row);
-    void lrcmp_pdte_init(seal::BatchEncoder *batch_encoder,int n, int num_cmps, uint64_t slot_count,uint64_t row_count);
+    void cdcmp_pdte_init(seal::BatchEncoder *batch_encoder,int num_cmps, int num_slots_per_element, uint64_t slot_count,uint64_t row_count, uint64_t num_cmps_per_row);
+    void rdcmp_pdte_init(seal::BatchEncoder *batch_encoder,int n, int num_cmps, uint64_t slot_count,uint64_t row_count);
 };
 
 void print_node(Node& a, std::string tabs = "");

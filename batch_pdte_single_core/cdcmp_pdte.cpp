@@ -11,7 +11,7 @@
 using namespace std;
 using namespace seal;
 
-void pdte_rrcmp_rec(vector<Ciphertext>& out,Node& node, Evaluator *evaluator,GaloisKeys* gal_keys_server, RelinKeys *rlk_server, vector<Ciphertext> client_input, Plaintext one, BatchEncoder *batch_encoder, int num_cmps, int num_slots_per_element, uint64_t slot_count,uint64_t row_count, uint64_t num_cmps_per_row){
+void pdte_cdcmp_rec(vector<Ciphertext>& out,Node& node, Evaluator *evaluator,GaloisKeys* gal_keys_server, RelinKeys *rlk_server, vector<Ciphertext> client_input, Plaintext one, BatchEncoder *batch_encoder, int num_cmps, int num_slots_per_element, uint64_t slot_count,uint64_t row_count, uint64_t num_cmps_per_row){
     if (node.is_leaf()){
         out.push_back(node.value);
     }else{
@@ -19,19 +19,19 @@ void pdte_rrcmp_rec(vector<Ciphertext>& out,Node& node, Evaluator *evaluator,Gal
         //left      0   1  right  *  left       1   0     right
         //note that the index of client_data in the tree starts from 0
         //cmp
-        node.right->value = rrcmp(evaluator, gal_keys_server, rlk_server, num_slots_per_element, node.threshold_bitv_plain[0], client_input[ node.feature_index ]);
+        node.right->value = cdcmp(evaluator, gal_keys_server, rlk_server, num_slots_per_element, node.threshold_bitv_plain[0], client_input[ node.feature_index ]);
         evaluator->negate(node.right->value, node.left->value);
         evaluator->add_plain_inplace(node.left->value, one);
         //travel
         evaluator->add_inplace(node.left->value, node.value);
         evaluator->add_inplace(node.right->value, node.value);
-        pdte_rrcmp_rec(out, *(node.left), evaluator,gal_keys_server, rlk_server, client_input,one, batch_encoder,num_cmps, num_slots_per_element, slot_count, row_count, num_cmps_per_row);
-        pdte_rrcmp_rec(out, *(node.right), evaluator,gal_keys_server, rlk_server, client_input,one, batch_encoder,num_cmps, num_slots_per_element, slot_count, row_count, num_cmps_per_row);
+        pdte_cdcmp_rec(out, *(node.left), evaluator,gal_keys_server, rlk_server, client_input,one, batch_encoder,num_cmps, num_slots_per_element, slot_count, row_count, num_cmps_per_row);
+        pdte_cdcmp_rec(out, *(node.right), evaluator,gal_keys_server, rlk_server, client_input,one, batch_encoder,num_cmps, num_slots_per_element, slot_count, row_count, num_cmps_per_row);
     }
 }
 
 
-//g++ -o rrcmp_pdte -O3 rrcmp_pdte.cpp src/utils.cpp src/cmp.cpp src/node.cpp src/pdte.cpp -I./include -I /usr/local/include/SEAL-4.1 -lseal-4.1
+//g++ -o cdcmp_pdte -O3 cdcmp_pdte.cpp src/utils.cpp src/cmp.cpp src/node.cpp src/pdte.cpp -I./include -I /usr/local/include/SEAL-4.1 -lseal-4.1
 
 int main(int argc, char* argv[]){
 
@@ -80,9 +80,9 @@ int main(int argc, char* argv[]){
     
     EncryptionParameters parms;
     if(clr==1){
-        parms = rrcmp_init(1024);
+        parms = cdcmp_init(1024);
     }else{
-        parms = rrcmp_init(n);
+        parms = cdcmp_init(n);
     }
     
     SEALContext* context = new SEALContext(parms);
@@ -124,7 +124,7 @@ int main(int argc, char* argv[]){
     vector<Ciphertext> client_input;
     for(int i = 0; i < index_feat.size(); i++){
         Ciphertext temp;
-        vector<uint64_t> encrypted_op_encode = rrcmp_encode_b(index_feat[i],num_slots_per_element,slot_count,row_count,num_cmps_per_row);
+        vector<uint64_t> encrypted_op_encode = cdcmp_encode_b(index_feat[i],num_slots_per_element,slot_count,row_count,num_cmps_per_row);
         Plaintext plaintext; 
         batch_encoder->encode(encrypted_op_encode, plaintext);
         encryptor->encrypt(plaintext, temp);
@@ -146,13 +146,13 @@ int main(int argc, char* argv[]){
 
     Plaintext one = init_one(batch_encoder, slot_count);
     root.value = init_cipher_zero(batch_encoder, encryptor, slot_count);
-    root.rrcmp_pdte_init(batch_encoder,num_cmps,num_slots_per_element,slot_count,row_count,num_cmps_per_row);
+    root.cdcmp_pdte_init(batch_encoder,num_cmps,num_slots_per_element,slot_count,row_count,num_cmps_per_row);
 
     cout<<"Init the tree,                          run time is "<<(clock()-start)/1000 <<" ms"<<endl;
 
     vector<Ciphertext> out1;
     start = clock();
-    pdte_rrcmp_rec(out1, root, evaluator, gal_keys_server, rlk_server, client_input, one, batch_encoder,num_cmps, num_slots_per_element, slot_count, row_count, num_cmps_per_row);
+    pdte_cdcmp_rec(out1, root, evaluator, gal_keys_server, rlk_server, client_input, one, batch_encoder,num_cmps, num_slots_per_element, slot_count, row_count, num_cmps_per_row);
 
     vector<uint64_t> leaf_vec;
     leaf_extract_rec(leaf_vec, root);
@@ -199,7 +199,7 @@ int main(int argc, char* argv[]){
 
     if(clr==1){
         cout<<"clr process"<<endl;
-        out = tecmp_rrcmp_pdte_clear_line_relation(batch_encoder,evaluator,out,leaf_num,data_m,slot_count,row_count,num_cmps_per_row,num_slots_per_element);
+        out = tecmp_cdcmp_pdte_clear_line_relation(batch_encoder,evaluator,out,leaf_num,data_m,slot_count,row_count,num_cmps_per_row,num_slots_per_element);
     }
         
     clock_t finish = clock()-start; start = clock();
@@ -217,8 +217,8 @@ int main(int argc, char* argv[]){
     vector<vector<uint64_t>> ans0, ans1;
     for(int j=0;j<out[0].size();j++){
         vector<uint64_t> res0, res1;
-        res0 = rrcmp_decode_a_gt_b_dec(out[0][j],decryptor,batch_encoder,num_cmps,num_slots_per_element,num_cmps_per_row,row_count);
-        res1 = rrcmp_decode_a_gt_b_dec(out[1][j],decryptor,batch_encoder,num_cmps,num_slots_per_element,num_cmps_per_row,row_count);
+        res0 = cdcmp_decode_a_gt_b_dec(out[0][j],decryptor,batch_encoder,num_cmps,num_slots_per_element,num_cmps_per_row,row_count);
+        res1 = cdcmp_decode_a_gt_b_dec(out[1][j],decryptor,batch_encoder,num_cmps,num_slots_per_element,num_cmps_per_row,row_count);
         ans0.push_back(res0);
         ans1.push_back(res1);
     }
