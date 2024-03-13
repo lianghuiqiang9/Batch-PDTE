@@ -24,7 +24,6 @@ make
 #the most bit precision
 ./tecmp -l 2048 -m 13
 
-
 ./rdcmp -n 8
 ./rdcmp -n 16
 ./rdcmp -n 16
