@@ -26,14 +26,14 @@
 
 #high-precision in single row
 
-tecmp-pdte
+tecmp_norm_pdte-pdte
 
-./tecmp_pdte -t ../data/breast_16bits/model.json -v ../data/breast_16bits/x_test.csv -r 1 -l 2 -m 8 -c 0
-./tecmp_pdte -t ../data/breast_31bits/model.json -v ../data/breast_31bits/x_test.csv -r 1 -l 3 -m 11 -c 0
-./tecmp_pdte -t ../data/breast_31bits/model.json -v ../data/breast_31bits/x_test.csv -r 1 -l 6 -m 11 -c 0
-./tecmp_pdte -t ../data/breast_31bits/model.json -v ../data/breast_31bits/x_test.csv -r 1 -l 11 -m 12 -c 0
+./tecmp_norm_pdte -t ../data/breast_16bits/model.json -v ../data/breast_16bits/x_test.csv -r 1 -l 2 -m 8 -c 0
+./tecmp_norm_pdte -t ../data/breast_31bits/model.json -v ../data/breast_31bits/x_test.csv -r 1 -l 3 -m 11 -c 0
+./tecmp_norm_pdte -t ../data/breast_31bits/model.json -v ../data/breast_31bits/x_test.csv -r 1 -l 6 -m 11 -c 0
+./tecmp_norm_pdte -t ../data/breast_31bits/model.json -v ../data/breast_31bits/x_test.csv -r 1 -l 11 -m 12 -c 0
 
 #single line in different tree
-./tecmp_pdte -t ../data/breast_31bits/model.json -v ../data/spam_11bits/x_test.csv -r 1 -l 3 -m 11 -c 0
-./tecmp_pdte -t ../data/electricity_10bits/model.json -v ../data/electricity_10bits/x_test.csv -r 1 -l 3 -m 11 -c 0
+./tecmp_norm_pdte -t ../data/breast_31bits/model.json -v ../data/spam_11bits/x_test.csv -r 1 -l 3 -m 11 -c 0
+./tecmp_norm_pdte -t ../data/electricity_10bits/model.json -v ../data/electricity_10bits/x_test.csv -r 1 -l 3 -m 11 -c 0
 
